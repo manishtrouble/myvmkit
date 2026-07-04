@@ -1,6 +1,6 @@
 # myvmkit
 
-Repeatable Hetzner devbox provisioning with Terraform, cloud-init, Tailscale-only SSH, and bootstrapped zsh/Neovim/tmux/yazi dotfiles.
+> Repeatable Hetzner devbox provisioning with Terraform, cloud-init, Tailscale-only SSH, and bootstrapped zsh/Neovim/tmux/yazi dotfiles.
 
 ## What it creates
 
