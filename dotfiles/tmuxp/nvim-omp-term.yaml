@@ -1,0 +1,17 @@
+session_name: nvim-omp-term
+start_directory: ./
+windows:
+  - window_name: work
+    layout: main-vertical
+    options:
+      main-pane-width: '60%'
+    panes:
+      - shell_command:
+          - nvim
+        focus: true
+
+      - shell_command:
+          - omp
+
+      - shell_command:
+          -

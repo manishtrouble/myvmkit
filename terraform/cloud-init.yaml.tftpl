@@ -1,0 +1,115 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+
+preserve_hostname: false
+hostname: ${hostname}
+manage_etc_hosts: true
+
+packages:
+  - ca-certificates
+  - curl
+  - fzf
+  - git
+  - jq
+  - neovim
+  - pipx
+  - python3-pip
+  - python3-venv
+  - ripgrep
+  - tmux
+  - tmuxp
+  - ufw
+  - unzip
+  - vim
+  - zsh
+
+users:
+  - default
+  - name: ${username}
+    groups: [sudo]
+    shell: /usr/bin/zsh
+    lock_passwd: true
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+write_files:
+  - path: /usr/local/sbin/devbox-firstboot.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      USERNAME='${username}'
+      HOSTNAME_VALUE='${hostname}'
+      TAILSCALE_AUTH_KEY='${tailscale_auth_key}'
+      DOTFILES_REPO_URL='${dotfiles_repo_url}'
+      DOTFILES_BOOTSTRAP_PATH='${dotfiles_bootstrap_path}'
+      DOTFILES_DIR="/home/$${USERNAME}/.dotfiles"
+
+      log() {
+        printf '[devbox-firstboot] %s\n' "$${1}"
+      }
+
+      run_as_user() {
+        runuser -u "$${USERNAME}" -- "$@"
+      }
+
+      log 'ensuring tailscale is installed'
+      if ! command -v tailscale >/dev/null 2>&1; then
+        curl -fsSL https://tailscale.com/install.sh | sh
+      fi
+      systemctl enable --now tailscaled
+
+      if [ -n "$${TAILSCALE_AUTH_KEY}" ]; then
+        if tailscale status --json >/dev/null 2>&1; then
+          log 'tailscale is already authenticated'
+        else
+          log 'joining tailscale'
+          tailscale up \
+            --auth-key="$${TAILSCALE_AUTH_KEY}" \
+            --hostname="$${HOSTNAME_VALUE}" \
+            --accept-dns=true
+        fi
+      else
+        log 'tailscale auth key is empty; installed tailscale but skipped tailnet join'
+      fi
+
+      log 'configuring ufw'
+      ufw default deny incoming
+      ufw default allow outgoing
+      ufw allow in on tailscale0 || true
+      ufw --force enable
+
+      log 'preparing user directories'
+      install -d -o "$${USERNAME}" -g "$${USERNAME}" -m 700 "/home/$${USERNAME}/.ssh"
+      chown -R "$${USERNAME}:$${USERNAME}" "/home/$${USERNAME}/.ssh"
+
+      if [ -n "$${DOTFILES_REPO_URL}" ]; then
+        log 'syncing dotfiles repository'
+        if [ -d "$${DOTFILES_DIR}/.git" ]; then
+          run_as_user git -C "$${DOTFILES_DIR}" pull --ff-only
+        else
+          rm -rf "$${DOTFILES_DIR}"
+          run_as_user git clone "$${DOTFILES_REPO_URL}" "$${DOTFILES_DIR}"
+        fi
+
+        if [ -f "$${DOTFILES_DIR}/$${DOTFILES_BOOTSTRAP_PATH}" ]; then
+          log 'running dotfiles bootstrap'
+          chmod +x "$${DOTFILES_DIR}/$${DOTFILES_BOOTSTRAP_PATH}"
+          run_as_user bash -lc "cd '$${DOTFILES_DIR}' && './$${DOTFILES_BOOTSTRAP_PATH}'"
+        else
+          log "dotfiles bootstrap not found at $${DOTFILES_BOOTSTRAP_PATH}; skipping"
+        fi
+      else
+        log 'dotfiles repo URL is empty; skipping dotfiles bootstrap'
+      fi
+
+      log 'complete'
+
+runcmd:
+  - /usr/local/sbin/devbox-firstboot.sh 2>&1 | tee /var/log/devbox-firstboot.log
+
+final_message: "Devbox bootstrap finished after $UPTIME seconds. See /var/log/devbox-firstboot.log and /var/log/cloud-init-output.log."

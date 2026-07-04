@@ -1,0 +1,27 @@
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
+
+# Local/generated Terraform inputs
+terraform/*.tfvars
+terraform/*.tfvars.json
+!terraform/terraform.tfvars.example
+
+# Local secrets and env files
+.env
+.env.*
+!.env.example
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Editor/OS noise
+.DS_Store
+*.swp
+.tmuxp.yaml
