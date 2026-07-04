@@ -14,7 +14,7 @@ image       = "ubuntu-24.04"
 # Do not set tailscale_auth_key here unless intentionally overriding the env var.
 
 # Add this when the public GitHub repo is ready.
-dotfiles_repo_url       = "https://github.com/<your-username>/myvmkit.git"
+dotfiles_repo_url       = "https://github.com/manishtrouble/myvmkit.git"
 dotfiles_bootstrap_path = "dotfiles/bootstrap.sh"
 
 # Keep empty for normal Tailscale-only access.
