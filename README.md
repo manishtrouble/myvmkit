@@ -17,16 +17,6 @@ It uses:
 
 Normal access is over Tailscale, not public SSH.
 
-## Repository layout
-
-```text
-terraform/              Terraform config for the VM, firewall, SSH key, outputs
-scripts/choose-vm.py    Hetzner server type/location selector
-dotfiles/               zsh, Neovim, tmuxp, and bootstrap setup
-Makefile                Common workflow commands
-PLAN.md                 Design notes and implementation plan
-```
-
 ## Prerequisites
 
 Install locally:
@@ -57,27 +47,6 @@ Create a local tfvars file. It is gitignored.
 ```bash
 cp terraform/terraform.tfvars.example terraform/terraform.tfvars
 ```
-
-Edit `terraform/terraform.tfvars`:
-
-```hcl
-name                = "devbox1"
-username            = "youruser"
-ssh_public_key_path = "~/.ssh/id_rsa_personal.pub"
-
-image = "ubuntu-24.04"
-
-dotfiles_repo_url       = "https://github.com/<your-username>/myvmkit.git"
-dotfiles_bootstrap_path = "dotfiles/bootstrap.sh"
-
-allow_public_ssh_cidrs = []
-
-labels = {
-  owner = "youruser"
-}
-```
-
-Do not put the Tailscale auth key in `terraform.tfvars`; keep it in `.env` as `TF_VAR_tailscale_auth_key`.
 
 ## Create the first VM
 
